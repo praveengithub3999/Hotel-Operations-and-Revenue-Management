@@ -13,21 +13,22 @@ from app.models.invoice import Invoice
 from app.models.payment import Payment
 from app.models.user import User
 from app.core.security import hash_password
-
+from app.models.charge import Charge
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_data():
     db = SessionLocal()
 
     try:
         # Remove old test reservations
-        db.query(Payment).delete()
-        db.query(Invoice).delete()
+        db.query(Payment).delete(synchronize_session = False)
+        db.query(Invoice).delete(synchronize_session=False)
+        db.query(Charge).delete(synchronize_session=False)
 
         # Reset room statuses
-        db.query(Reservation).delete()
+        db.query(Reservation).delete(synchronize_session=False)
         db.query(Room).update({
             Room.status: "AVAILABLE"
-        })
+        },synchronize_session=False)
 
         db.commit()
 

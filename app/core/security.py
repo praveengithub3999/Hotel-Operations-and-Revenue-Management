@@ -5,15 +5,20 @@ import bcrypt
 from jose import jwt
 
 
-SECRET_KEY = getenv(
-    "SECRET_KEY",
-    "hotel-management-secret-key-2026"
-)
+ENVIRONMENT = getenv("ENVIRONMENT", "development")
 
-ALGORITHM = getenv(
-    "ALGORITHM",
-    "HS256"
-)
+SECRET_KEY = getenv("SECRET_KEY")
+
+if not SECRET_KEY:
+    if ENVIRONMENT.lower() == "production":
+        raise RuntimeError(
+            "SECRET_KEY must be set in production"
+        )
+
+    # Local development only
+    SECRET_KEY = "hotel-management-secret-key-2026"
+
+ALGORITHM = getenv("ALGORITHM", "HS256")
 
 
 def hash_password(password: str) -> str:

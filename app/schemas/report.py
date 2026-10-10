@@ -7,6 +7,7 @@ class OccupancyReport(BaseModel):
     available_rooms: int
     reserved_rooms: int
     dirty_rooms: int
+    cleaning_rooms: int
     maintenance_rooms: int
     occupancy_percentage: float
 

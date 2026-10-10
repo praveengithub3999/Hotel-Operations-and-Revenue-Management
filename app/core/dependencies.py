@@ -6,10 +6,19 @@ from os import getenv
 
 security = HTTPBearer()
 
-SECRET_KEY = getenv(
-    "SECRET_KEY",
-    "hotel-management-secret-key-2026"
-)
+ENVIRONMENT = getenv("ENVIRONMENT", "development")
+
+SECRET_KEY = getenv("SECRET_KEY")
+
+if not SECRET_KEY:
+    if ENVIRONMENT.lower() == "production":
+        raise RuntimeError(
+            "SECRET_KEY must be set in production"
+        )
+
+    # Local development only
+    SECRET_KEY = "hotel-management-secret-key-2026"
+
 ALGORITHM = getenv("ALGORITHM", "HS256")
 
 

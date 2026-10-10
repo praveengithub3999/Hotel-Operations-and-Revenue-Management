@@ -46,6 +46,8 @@ def get_occupancy_report(
         Room.status == "MAINTENANCE"
     ).count()
 
+    cleaning_rooms = db.query(Room).filter(Room.status == "CLEANING").count()
+
     if total_rooms > 0:
         occupancy_percentage = (
             occupied_rooms / total_rooms
@@ -60,6 +62,7 @@ def get_occupancy_report(
         "reserved_rooms": reserved_rooms,
         "dirty_rooms": dirty_rooms,
         "maintenance_rooms": maintenance_rooms,
+        "cleaning_rooms": cleaning_rooms,
         "occupancy_percentage": round(
             occupancy_percentage, 2
         )
@@ -137,6 +140,7 @@ def get_reservation_report(
         "total_reservations": total_reservations
     }
 
+
 @router.get(
     "/rooms",
     response_model=RoomStatusReport
@@ -145,7 +149,6 @@ def get_room_status_report(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-
     available = db.query(Room).filter(
         Room.status == "AVAILABLE"
     ).count()
