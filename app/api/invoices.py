@@ -126,3 +126,65 @@ def get_invoice(
         )
 
     return invoice
+
+@router.post("/{invoice_id}/recalculate", response_model=InvoiceResponse)
+def recalculate_invoice(
+    invoice_id: int,
+    db: Session = Depends(get_db)
+):
+    invoice = db.query(Invoice).filter(
+        Invoice.id == invoice_id
+    ).first()
+
+    if not invoice:
+        raise HTTPException(
+            status_code=404,
+            detail="Invoice not found"
+        )
+
+    if invoice.status == "PAID":
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot recalculate a paid invoice"
+        )
+
+    charges = db.query(Charge).filter(
+        Charge.reservation_id == invoice.reservation_id
+    ).all()
+
+    subtotal = sum(
+        (charge.total_amount for charge in charges),
+        Decimal("0")
+    )
+
+    if invoice.discount > subtotal:
+        raise HTTPException(
+            status_code=400,
+            detail="Existing discount cannot be greater than subtotal"
+        )
+
+    taxable_amount = subtotal - invoice.discount
+
+    # Preserve the invoice's existing tax rate when possible.
+    if invoice.subtotal > 0:
+        tax_percentage = (
+            invoice.tax / (invoice.subtotal - invoice.discount)
+            * Decimal("100")
+            if invoice.subtotal != invoice.discount
+            else Decimal("0")
+        )
+    else:
+        # Use 10% for a previously zero-value invoice.
+        tax_percentage = Decimal("10")
+
+    tax = taxable_amount * tax_percentage / Decimal("100")
+    total = taxable_amount + tax
+
+    invoice.subtotal = subtotal
+    invoice.tax = tax
+    invoice.total = total
+
+    db.commit()
+    db.refresh(invoice)
+
+    return invoice
