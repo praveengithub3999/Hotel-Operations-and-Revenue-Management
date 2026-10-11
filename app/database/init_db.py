@@ -14,7 +14,7 @@ from app.models.invoice import Invoice
 from app.models.payment import Payment
 from app.models.housekeeping import Housekeeping
 from app.models.maintenance import Maintenance
-
+from app.models.refund import Refund
 
 def init_db():
     Base.metadata.create_all(bind=engine)
