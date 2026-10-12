@@ -1,45 +1,35 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../services/api";
 
 function Rooms() {
   const [rooms, setRooms] = useState([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
-  const loadRooms = async () => {
+  const loadRooms = useCallback(async () => {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
-
-      const response = await api.get("/rooms/", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await api.get("/rooms/");
 
       setRooms(response.data);
       setMessage("");
     } catch (error) {
       console.error(error);
-
-      if (error.response?.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/", { replace: true });
-        return;
-      }
-
       setMessage("Unable to load rooms.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadRooms();
-  }, []);
+    const timer = setTimeout(() => {
+      void loadRooms();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [loadRooms]);
 
   const getStatusColor = (status) => {
     const colors = {
@@ -79,18 +69,32 @@ function Rooms() {
         }}
       >
         <div>
-          <h1 style={{ margin: "0 0 8px",fontSize: "30px",lineHeight:"1.3",fontWeight:700,color:"#17243a" }}>Room Management</h1>
-          <p style={{ color: "#64748b", margin: 0,fontSize: "14px", lineHeight:"1.5" }}>
+          <h1
+            style={{
+              margin: "0 0 8px",
+              fontSize: "30px",
+              lineHeight: "1.3",
+              fontWeight: 700,
+              color: "#17243a",
+            }}
+          >
+            Room Management
+          </h1>
+          <p
+            style={{
+              color: "#64748b",
+              margin: 0,
+              fontSize: "14px",
+              lineHeight: "1.5",
+            }}
+          >
             View room availability and current status.
           </p>
         </div>
 
         <div style={{ display: "flex", gap: "10px" }}>
-          <button
-            onClick={loadRooms}
-            style={buttonStyle}
-          >
-            Refresh
+          <button onClick={loadRooms} style={buttonStyle} disabled={loading}>
+            {loading ? "Loading..." : "Refresh"}
           </button>
 
           <Link to="/dashboard" style={linkStyle}>
@@ -99,9 +103,7 @@ function Rooms() {
         </div>
       </div>
 
-      {message && (
-        <p style={{ color: "#b91c1c" }}>{message}</p>
-      )}
+      {message && <p style={{ color: "#b91c1c" }}>{message}</p>}
 
       {loading ? (
         <p>Loading rooms...</p>
@@ -114,8 +116,7 @@ function Rooms() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit, minmax(230px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
               gap: "18px",
               marginBottom: "28px",
             }}
@@ -140,10 +141,7 @@ function Rooms() {
                 </p>
 
                 <h2 style={{ margin: 0, fontSize: "30px" }}>
-                  {
-                    rooms.filter((room) => room.status === status)
-                      .length
-                  }
+                  {rooms.filter((room) => room.status === status).length}
                 </h2>
               </div>
             ))}

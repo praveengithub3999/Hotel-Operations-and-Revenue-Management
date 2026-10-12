@@ -1,6 +1,4 @@
-
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
 import api from "../services/api";
 
 function Housekeeping() {
@@ -8,50 +6,34 @@ function Housekeeping() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadingTask, setLoadingTask] = useState(null);
-  const navigate = useNavigate();
 
-  const getHeaders = () => ({
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-  });
-
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     try {
-      const response = await api.get("/housekeeping/", {
-        headers: getHeaders(),
-      });
-
+      const response = await api.get("/housekeeping/");
       setTasks(response.data);
       setMessage("");
     } catch (error) {
       console.error(error);
-
-      if (error.response?.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/");
-        return;
-      }
-
       setMessage("Unable to load housekeeping tasks.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadTasks();
-  }, []);
+    const timer = setTimeout(() => {
+      void loadTasks();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [loadTasks]);
 
   const updateTask = async (taskId, status) => {
     setLoadingTask(taskId);
     setMessage("");
 
     try {
-      await api.put(
-        `/housekeeping/${taskId}`,
-        { status },
-        { headers: getHeaders() }
-      );
-
+      await api.put(`/housekeeping/${taskId}`, { status });
       setMessage(`Task #${taskId} updated successfully.`);
       await loadTasks();
     } catch (error) {
@@ -76,12 +58,9 @@ function Housekeeping() {
     return classes[status] || "default";
   };
 
-  const getStatusLabel = (status) =>
-    status.replaceAll("_", " ");
+  const getStatusLabel = (status) => status.replaceAll("_", " ");
 
-  const dirtyCount = tasks.filter(
-    (task) => task.status === "DIRTY"
-  ).length;
+  const dirtyCount = tasks.filter((task) => task.status === "DIRTY").length;
 
   const cleaningCount = tasks.filter(
     (task) => task.status === "CLEANING_IN_PROGRESS"
@@ -349,10 +328,8 @@ function Housekeeping() {
 
         <button
           className="hk-button"
-          onClick={() => {
-            setLoading(true);
-            loadTasks();
-          }}
+          type="button"
+          onClick={loadTasks}
           disabled={loading}
         >
           {loading ? "Loading..." : "↻ Refresh Tasks"}
@@ -361,6 +338,7 @@ function Housekeeping() {
 
       {message && (
         <div
+          role="status"
           className={`hk-message ${
             message.toLowerCase().includes("unable") ||
             message.toLowerCase().includes("error")
@@ -432,11 +410,9 @@ function Housekeeping() {
                 {tasks.map((task) => (
                   <tr key={task.id}>
                     <td className="hk-task-id">#{task.id}</td>
-
                     <td>
                       <span className="hk-room">{task.room_id}</span>
                     </td>
-
                     <td>
                       <span
                         className={`hk-status ${getStatusClass(task.status)}`}
@@ -444,17 +420,13 @@ function Housekeeping() {
                         {getStatusLabel(task.status)}
                       </span>
                     </td>
-
                     <td>{task.assigned_to || "Unassigned"}</td>
-
                     <td>{task.notes || "—"}</td>
-
                     <td>
                       {task.completed_at
                         ? new Date(task.completed_at).toLocaleString()
                         : "—"}
                     </td>
-
                     <td>
                       <select
                         className="hk-select"

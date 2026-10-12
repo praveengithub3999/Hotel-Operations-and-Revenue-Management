@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
 import api from "../services/api";
 
 function Guests() {
@@ -7,40 +6,28 @@ function Guests() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const navigate = useNavigate();
-
-  const loadGuests = async () => {
+  const loadGuests = useCallback(async () => {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
-
-      const response = await api.get("/guests/", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
+      const response = await api.get("/guests/");
       setGuests(response.data);
       setMessage("");
     } catch (error) {
       console.error(error);
-
-      if (error.response?.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/", { replace: true });
-        return;
-      }
-
       setMessage("Unable to load guests. Please try again.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadGuests();
-  }, []);
+    const timer = setTimeout(() => {
+      void loadGuests();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [loadGuests]);
 
   const cardStyle = {
     background: "#ffffff",
@@ -137,9 +124,7 @@ function Guests() {
           <p style={{ color: "#64748b", margin: "0 0 10px" }}>
             TOTAL GUESTS
           </p>
-          <h2 style={{ margin: 0, fontSize: "30px" }}>
-            {guests.length}
-          </h2>
+          <h2 style={{ margin: 0, fontSize: "30px" }}>{guests.length}</h2>
         </div>
 
         <div style={cardStyle}>
@@ -191,17 +176,14 @@ function Guests() {
                 {guests.map((guest) => (
                   <tr key={guest.id}>
                     <td style={cellStyle}>{guest.id}</td>
-
                     <td style={cellStyle}>
                       <strong>
                         {guest.first_name} {guest.last_name}
                       </strong>
                     </td>
-
                     <td style={cellStyle}>
                       {guest.email || "Not provided"}
                     </td>
-
                     <td style={cellStyle}>
                       {guest.phone || "Not provided"}
                     </td>

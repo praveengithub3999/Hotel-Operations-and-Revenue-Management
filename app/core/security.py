@@ -15,7 +15,6 @@ if not SECRET_KEY:
             "SECRET_KEY must be set in production"
         )
 
-    # Local development only
     SECRET_KEY = "hotel-management-secret-key-2026"
 
 ALGORITHM = getenv("ALGORITHM", "HS256")
@@ -23,6 +22,11 @@ ALGORITHM = getenv("ALGORITHM", "HS256")
 
 def hash_password(password: str) -> str:
     password_bytes = password.encode("utf-8")
+
+    if len(password_bytes) > 72:
+        raise ValueError(
+            "Password must not exceed 72 bytes when encoded as UTF-8"
+        )
 
     hashed = bcrypt.hashpw(
         password_bytes,
@@ -36,11 +40,18 @@ def verify_password(
     plain_password: str,
     hashed_password: str
 ) -> bool:
+    password_bytes = plain_password.encode("utf-8")
 
-    return bcrypt.checkpw(
-        plain_password.encode("utf-8"),
-        hashed_password.encode("utf-8")
-    )
+    if len(password_bytes) > 72:
+        return False
+
+    try:
+        return bcrypt.checkpw(
+            password_bytes,
+            hashed_password.encode("utf-8")
+        )
+    except (ValueError, TypeError):
+        return False
 
 
 def create_access_token(

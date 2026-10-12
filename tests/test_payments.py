@@ -47,8 +47,8 @@ def create_test_invoice():
     return invoice_id
 
 
-def test_payment_with_nonexistent_invoice():
-    response = client.post(
+def test_payment_with_nonexistent_invoice(admin_client):
+    response = admin_client.post(
         "/payments/",
         json={
             "invoice_id": 99999,
@@ -61,10 +61,10 @@ def test_payment_with_nonexistent_invoice():
     assert response.json()["detail"] == "Invoice not found"
 
 
-def test_payment_with_zero_amount():
+def test_payment_with_zero_amount(admin_client):
     invoice_id = create_test_invoice()
 
-    response = client.post(
+    response = admin_client.post(
         "/payments/",
         json={
             "invoice_id": invoice_id,
@@ -73,14 +73,16 @@ def test_payment_with_zero_amount():
         }
     )
 
-    assert response.status_code == 400
-    assert response.json()["detail"] == "Payment amount must be greater than zero"
+    assert response.status_code == 422
+    assert isinstance(response.json()["detail"], list)
+    assert response.json()["detail"][0]["loc"] == ["body", "amount"]
+    assert response.json()["detail"][0]["type"] == "greater_than"
 
 
-def test_payment_with_invalid_method():
+def test_payment_with_invalid_method(admin_client):
     invoice_id = create_test_invoice()
 
-    response = client.post(
+    response = admin_client.post(
         "/payments/",
         json={
             "invoice_id": invoice_id,
@@ -89,13 +91,15 @@ def test_payment_with_invalid_method():
         }
     )
 
-    assert response.status_code == 400
-    assert response.json()["detail"] == "Invalid payment method"
+    assert response.status_code == 422
+    assert isinstance(response.json()["detail"], list)
+    assert response.json()["detail"][0]["loc"] == ["body", "payment_method"]
+    assert "Invalid payment method" in response.json()["detail"][0]["msg"]
 
-def test_successful_payment():
+def test_successful_payment(admin_client):
     invoice_id = create_test_invoice()
 
-    response = client.post(
+    response = admin_client.post(
         "/payments/",
         json={
             "invoice_id": invoice_id,
@@ -116,10 +120,10 @@ def test_successful_payment():
     assert data["transaction_reference"] == "TEST-TXN-001"
 
 
-def test_payment_exceeds_invoice_total():
+def test_payment_exceeds_invoice_total(admin_client):
     invoice_id = create_test_invoice()
 
-    response = client.post(
+    response = admin_client.post(
         "/payments/",
         json={
             "invoice_id": invoice_id,
@@ -129,13 +133,13 @@ def test_payment_exceeds_invoice_total():
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "Payment amount exceeds invoice total"
+    assert response.json()["detail"] == "Payment amount exceeds the remaining invoice balance"
 
 
-def test_full_payment_marks_invoice_paid():
+def test_full_payment_marks_invoice_paid(admin_client):
     invoice_id = create_test_invoice()
 
-    response = client.post(
+    response = admin_client.post(
         "/payments/",
         json={
             "invoice_id": invoice_id,

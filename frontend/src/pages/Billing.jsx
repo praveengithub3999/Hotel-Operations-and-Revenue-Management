@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
 import api from "../services/api";
 
 function Billing() {
@@ -9,40 +8,28 @@ function Billing() {
   const [loadingInvoice, setLoadingInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const navigate = useNavigate();
-
-  const getHeaders = () => ({
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-  });
-
-  const loadInvoices = async () => {
+  const loadInvoices = useCallback(async () => {
     setLoading(true);
 
     try {
-      const response = await api.get("/invoices/", {
-        headers: getHeaders(),
-      });
-
+      const response = await api.get("/invoices/");
       setInvoices(response.data);
       setMessage("");
     } catch (error) {
       console.error(error);
-
-      if (error.response?.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/", { replace: true });
-        return;
-      }
-
       setMessage("Unable to load invoices.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadInvoices();
-  }, []);
+    const timer = setTimeout(() => {
+      void loadInvoices();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [loadInvoices]);
 
   const handlePayment = async (invoice) => {
     const method = paymentMethods[invoice.id] || "UPI";
@@ -64,15 +51,11 @@ function Billing() {
     setMessage("");
 
     try {
-      await api.post(
-        "/payments/",
-        {
-          invoice_id: invoice.id,
-          amount: Number(invoice.total),
-          payment_method: method,
-        },
-        { headers: getHeaders() }
-      );
+      await api.post("/payments/", {
+        invoice_id: invoice.id,
+        amount: Number(invoice.total),
+        payment_method: method,
+      });
 
       setMessage(`Payment recorded for Invoice #${invoice.id}.`);
       await loadInvoices();
@@ -175,7 +158,7 @@ function Billing() {
               lineHeight: 1.3,
             }}
           >
-            Billing & Invoices
+            Billing &amp; Invoices
           </h1>
 
           <p style={{ margin: 0, color: "#64748b", fontSize: "14px" }}>
@@ -221,9 +204,7 @@ function Billing() {
           <p style={{ color: "#64748b", fontSize: "13px", margin: "0 0 12px" }}>
             TOTAL INVOICES
           </p>
-          <h2 style={{ margin: 0, fontSize: "28px" }}>
-            {totalInvoices}
-          </h2>
+          <h2 style={{ margin: 0, fontSize: "28px" }}>{totalInvoices}</h2>
         </div>
 
         <div style={cardStyle}>
@@ -289,27 +270,13 @@ function Billing() {
                     <td style={tableCellStyle}>
                       <strong>#{invoice.id}</strong>
                     </td>
-
-                    <td style={tableCellStyle}>
-                      #{invoice.reservation_id}
-                    </td>
-
-                    <td style={tableCellStyle}>
-                      {formatMoney(invoice.subtotal)}
-                    </td>
-
-                    <td style={tableCellStyle}>
-                      {formatMoney(invoice.discount)}
-                    </td>
-
-                    <td style={tableCellStyle}>
-                      {formatMoney(invoice.tax)}
-                    </td>
-
+                    <td style={tableCellStyle}>#{invoice.reservation_id}</td>
+                    <td style={tableCellStyle}>{formatMoney(invoice.subtotal)}</td>
+                    <td style={tableCellStyle}>{formatMoney(invoice.discount)}</td>
+                    <td style={tableCellStyle}>{formatMoney(invoice.tax)}</td>
                     <td style={tableCellStyle}>
                       <strong>{formatMoney(invoice.total)}</strong>
                     </td>
-
                     <td style={tableCellStyle}>
                       <span
                         style={{
@@ -323,10 +290,8 @@ function Billing() {
                         {invoice.status}
                       </span>
                     </td>
-
                     <td style={tableCellStyle}>
-                      {invoice.status !== "PAID" &&
-                      Number(invoice.total) > 0 ? (
+                      {invoice.status !== "PAID" && Number(invoice.total) > 0 ? (
                         <div
                           style={{
                             display: "flex",
@@ -354,9 +319,7 @@ function Billing() {
                             <option value="UPI">UPI</option>
                             <option value="CASH">Cash</option>
                             <option value="CARD">Card</option>
-                            <option value="BANK_TRANSFER">
-                              Bank Transfer
-                            </option>
+                            <option value="BANK_TRANSFER">Bank Transfer</option>
                           </select>
 
                           <button

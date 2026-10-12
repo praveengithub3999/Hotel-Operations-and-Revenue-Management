@@ -1,3 +1,4 @@
+
 from pydantic import BaseModel, EmailStr
 
 
@@ -5,13 +6,19 @@ class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
-    role: str = "STAFF"
+
+
+class StaffCreate(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+    role: str
 
 
 class UserResponse(BaseModel):
     id: int
     username: str
-    email: str
+    email: EmailStr
     role: str
     is_active: bool
 

@@ -1,13 +1,24 @@
+
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+
+from app.core.roles import require_role
 from app.database.database import get_db
 from app.models.room import Room
-from app.core.dependencies import get_current_user
-from app.schemas.report import OccupancyReport, RevenueReport, ReservationReport, RoomStatusReport
 from app.models.charge import Charge
 from app.models.payment import Payment
+from app.models.refund import Refund
 from app.models.reservation import Reservation
+from app.schemas.report import (
+    OccupancyReport,
+    RevenueReport,
+    ReservationReport,
+    RoomStatusReport
+)
+
 
 router = APIRouter(
     prefix="/reports",
@@ -15,15 +26,15 @@ router = APIRouter(
 )
 
 
+# Occupancy report: Admin and Manager
 @router.get(
     "/occupancy",
-    response_model=OccupancyReport
+    response_model=OccupancyReport,
+    dependencies=[Depends(require_role("ADMIN", "MANAGER"))]
 )
 def get_occupancy_report(
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
-
     total_rooms = db.query(Room).count()
 
     occupied_rooms = db.query(Room).filter(
@@ -43,17 +54,17 @@ def get_occupancy_report(
     ).count()
 
     maintenance_rooms = db.query(Room).filter(
-        Room.status == "MAINTENANCE"
+        Room.status.in_(["MAINTENANCE", "OUT_OF_SERVICE"])
     ).count()
 
-    cleaning_rooms = db.query(Room).filter(Room.status == "CLEANING").count()
+    cleaning_rooms = db.query(Room).filter(
+        Room.status == "CLEANING"
+    ).count()
 
-    if total_rooms > 0:
-        occupancy_percentage = (
-            occupied_rooms / total_rooms
-        ) * 100
-    else:
-        occupancy_percentage = 0
+    occupancy_percentage = (
+        occupied_rooms / total_rooms * 100
+        if total_rooms else 0
+    )
 
     return {
         "total_rooms": total_rooms,
@@ -63,20 +74,21 @@ def get_occupancy_report(
         "dirty_rooms": dirty_rooms,
         "maintenance_rooms": maintenance_rooms,
         "cleaning_rooms": cleaning_rooms,
-        "occupancy_percentage": round(
-            occupancy_percentage, 2
-        )
+        "occupancy_percentage": round(occupancy_percentage, 2)
     }
 
+
+# Revenue report: Admin, Finance and Manager
 @router.get(
     "/revenue",
-    response_model=RevenueReport
+    response_model=RevenueReport,
+    dependencies=[
+        Depends(require_role("ADMIN", "FINANCE", "MANAGER"))
+    ]
 )
 def get_revenue_report(
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
-
     total_charges = db.query(
         func.coalesce(func.sum(Charge.total_amount), 0)
     ).scalar()
@@ -84,103 +96,93 @@ def get_revenue_report(
     successful_payments = db.query(
         func.coalesce(func.sum(Payment.amount), 0)
     ).filter(
-        Payment.payment_status == "SUCCESS"
+        Payment.payment_status.in_([
+            "SUCCESS",
+            "PARTIALLY_REFUNDED",
+            "REFUNDED"
+        ])
     ).scalar()
 
-    total_revenue = successful_payments
+    successful_refunds = db.query(
+        func.coalesce(func.sum(Refund.amount), 0)
+    ).filter(
+        Refund.status == "SUCCESS"
+    ).scalar()
+
+    payment_amount = Decimal(str(successful_payments))
+    refund_amount = Decimal(str(successful_refunds))
+
+    net_revenue = payment_amount - refund_amount
 
     return {
-        "total_charges": float(total_charges),
-        "successful_payments": float(successful_payments),
-        "total_revenue": float(total_revenue)
+        "total_charges": float(total_charges or 0),
+        "successful_payments": float(payment_amount),
+        "total_revenue": float(net_revenue)
     }
 
+
+# Reservation report: Admin, Receptionist and Manager
 @router.get(
     "/reservations",
-    response_model=ReservationReport
+    response_model=ReservationReport,
+    dependencies=[
+        Depends(require_role("ADMIN", "RECEPTIONIST", "MANAGER"))
+    ]
 )
 def get_reservation_report(
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
-
-    pending = db.query(Reservation).filter(
-        Reservation.status == "PENDING"
-    ).count()
-
-    confirmed = db.query(Reservation).filter(
-        Reservation.status == "CONFIRMED"
-    ).count()
-
-    checked_in = db.query(Reservation).filter(
-        Reservation.status == "CHECKED_IN"
-    ).count()
-
-    checked_out = db.query(Reservation).filter(
-        Reservation.status == "CHECKED_OUT"
-    ).count()
-
-    cancelled = db.query(Reservation).filter(
-        Reservation.status == "CANCELLED"
-    ).count()
-
-    no_show = db.query(Reservation).filter(
-        Reservation.status == "NO_SHOW"
-    ).count()
-
-    total_reservations = db.query(Reservation).count()
-
-    return {
-        "pending": pending,
-        "confirmed": confirmed,
-        "checked_in": checked_in,
-        "checked_out": checked_out,
-        "cancelled": cancelled,
-        "no_show": no_show,
-        "total_reservations": total_reservations
+    statuses = {
+        "pending": "PENDING",
+        "confirmed": "CONFIRMED",
+        "checked_in": "CHECKED_IN",
+        "checked_out": "CHECKED_OUT",
+        "cancelled": "CANCELLED",
+        "no_show": "NO_SHOW"
     }
 
+    counts = {
+        key: db.query(Reservation).filter(
+            Reservation.status == status
+        ).count()
+        for key, status in statuses.items()
+    }
 
+    counts["total_reservations"] = db.query(Reservation).count()
+
+    return counts
+
+
+# Room status report: Admin and Manager
 @router.get(
     "/rooms",
-    response_model=RoomStatusReport
+    response_model=RoomStatusReport,
+    dependencies=[Depends(require_role("ADMIN", "MANAGER"))]
 )
 def get_room_status_report(
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
-    available = db.query(Room).filter(
-        Room.status == "AVAILABLE"
-    ).count()
-
-    reserved = db.query(Room).filter(
-        Room.status == "RESERVED"
-    ).count()
-
-    occupied = db.query(Room).filter(
-        Room.status == "OCCUPIED"
-    ).count()
-
-    dirty = db.query(Room).filter(
-        Room.status == "DIRTY"
-    ).count()
-
-    cleaning = db.query(Room).filter(
-        Room.status == "CLEANING"
-    ).count()
-
-    maintenance = db.query(Room).filter(
-        Room.status == "MAINTENANCE"
-    ).count()
-
-    total_rooms = db.query(Room).count()
-
-    return {
-        "available": available,
-        "reserved": reserved,
-        "occupied": occupied,
-        "dirty": dirty,
-        "cleaning": cleaning,
-        "maintenance": maintenance,
-        "total_rooms": total_rooms
+    statuses = {
+        "available": "AVAILABLE",
+        "reserved": "RESERVED",
+        "occupied": "OCCUPIED",
+        "dirty": "DIRTY",
+        "cleaning": "CLEANING",
+        "maintenance": ["MAINTENANCE", "OUT_OF_SERVICE"]
     }
+
+    counts = {}
+
+    for key, status in statuses.items():
+        query = db.query(Room)
+
+        if isinstance(status, list):
+            query = query.filter(Room.status.in_(status))
+        else:
+            query = query.filter(Room.status == status)
+
+        counts[key] = query.count()
+
+    counts["total_rooms"] = db.query(Room).count()
+
+    return counts

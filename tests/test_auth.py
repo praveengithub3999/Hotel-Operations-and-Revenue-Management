@@ -63,14 +63,15 @@ def test_protected_endpoint_with_invalid_token():
 
     client.headers.pop("Authorization", None)
 
-def test_register_new_user():
-    response = client.post(
+
+def test_register_new_user(admin_client):
+    response = admin_client.post(
         "/users/register",
         json={
             "username": "testuser",
             "email": "testuser@hotel.com",
             "password": "test123",
-            "role": "STAFF"
+            "role": "HOUSEKEEPING"
         }
     )
 
@@ -80,12 +81,11 @@ def test_register_new_user():
 
     assert data["username"] == "testuser"
     assert data["email"] == "testuser@hotel.com"
-    assert data["role"] == "STAFF"
+    assert data["role"] == "HOUSEKEEPING"
     assert "password_hash" not in data
 
-
-def test_register_duplicate_user():
-    response = client.post(
+def test_register_duplicate_user(admin_client):
+    response = admin_client.post(
         "/users/register",
         json={
             "username": "admin",
@@ -95,4 +95,4 @@ def test_register_duplicate_user():
         }
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409

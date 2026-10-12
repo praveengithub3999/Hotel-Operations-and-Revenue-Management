@@ -1,6 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from app.database.mongodb import audit_logs_collection
+from app.core.roles import require_role
 
 
 router = APIRouter(
@@ -9,7 +10,10 @@ router = APIRouter(
 )
 
 
-@router.get("/test")
+@router.get(
+    "/test",
+    dependencies=[Depends(require_role("ADMIN"))]
+)
 def check_mongodb():
     result = audit_logs_collection.insert_one({
         "action": "API_TEST",

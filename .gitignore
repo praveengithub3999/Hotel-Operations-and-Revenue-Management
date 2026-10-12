@@ -28,3 +28,8 @@ frontend/dist/
 frontend/.env
 frontend/.env.*
 !frontend/.env.example
+
+# Coverage and test artifacts
+.coverage
+htmlcov/
+coverage.xml

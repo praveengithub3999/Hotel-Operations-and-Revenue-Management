@@ -1,3 +1,4 @@
+
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey
 from datetime import datetime
 
@@ -24,6 +25,12 @@ class Invoice(Base):
         Numeric(10, 2),
         nullable=False,
         default=0
+    )
+
+    tax_percentage = Column(
+        Numeric(5, 2),
+        nullable=False,
+        default=10
     )
 
     tax = Column(
