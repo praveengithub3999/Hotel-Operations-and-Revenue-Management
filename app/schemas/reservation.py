@@ -1,5 +1,5 @@
 from datetime import date
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ReservationCreate(BaseModel):
@@ -19,6 +19,15 @@ class ReservationCreate(BaseModel):
         return self
 
 
+class ReservationUpdate(BaseModel):
+    room_id: int | None = None
+    check_in_date: date | None = None
+    check_out_date: date | None = None
+    number_of_guests: int | None = None
+    special_requests: str | None = None
+    status: str | None = None
+
+
 class ReservationResponse(BaseModel):
     id: int
     guest_id: int
@@ -29,5 +38,4 @@ class ReservationResponse(BaseModel):
     status: str
     special_requests: str | None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

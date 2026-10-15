@@ -15,4 +15,5 @@ class Guest(Base):
     address = Column(String(255))
     id_type = Column(String(50))
     id_reference = Column(String(100))
+    emergency_contact = Column(String(50), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

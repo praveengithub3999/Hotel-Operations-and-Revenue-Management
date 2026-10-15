@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -16,6 +17,14 @@ class RoomCreate(BaseModel):
             raise ValueError("Room number cannot be empty")
 
         return value
+
+
+class RoomUpdate(BaseModel):
+    hotel_id: Optional[int] = None
+    room_type_id: Optional[int] = None
+    room_number: Optional[str] = None
+    floor: Optional[int] = None
+    status: Optional[str] = None
 
 
 class RoomResponse(BaseModel):

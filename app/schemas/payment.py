@@ -1,7 +1,7 @@
+from datetime import datetime
 from decimal import Decimal
 from typing import Optional
-
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class PaymentCreate(BaseModel):
@@ -39,6 +39,6 @@ class PaymentResponse(BaseModel):
     payment_method: str
     payment_status: str
     transaction_reference: Optional[str] = None
+    paid_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

@@ -11,8 +11,11 @@ from app.api.invoices import router as invoice_router
 from app.api.payments import router as payment_router
 from app.api.refund import router as refund_router
 from app.api.checkout import router as checkout_router
-from app.api.housekeeping import router as housekeeping_router
-from app.api.maintenance import router as maintenance_router
+from app.api.housekeeping import router as housekeeping_router, room_hk_router
+from app.api.maintenance import router as maintenance_router, maintenance_requests_router
+from app.api.discounts import router as discounts_router
+from app.api.staff_assignments import router as staff_assignments_router
+from app.api.feedback import router as feedback_router
 from app.api.mongo_test import router as mongo_test_router
 from app.api.audit_test import router as audit_test_router
 from app.api.user import router as users_router
@@ -21,8 +24,8 @@ from app.api.reports import router as reports_router
 
 app = FastAPI(
     title="StayEase Hotel Operations & Revenue Management System",
-    description="Backend system for hotel operations and revenue management",
-    version="1.0.0"
+    description="Backend system for hotel operations and revenue management adhering to all specification requirements",
+    version="2.0.0"
 )
 
 app.add_middleware(
@@ -48,12 +51,18 @@ app.include_router(payment_router)
 app.include_router(refund_router)
 app.include_router(checkout_router)
 app.include_router(housekeeping_router)
+app.include_router(room_hk_router)
 app.include_router(maintenance_router)
+app.include_router(maintenance_requests_router)
+app.include_router(discounts_router)
+app.include_router(staff_assignments_router)
+app.include_router(feedback_router)
 app.include_router(mongo_test_router)
 app.include_router(audit_test_router)
 app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(reports_router)
+
 
 @app.get("/")
 def home():

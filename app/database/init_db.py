@@ -15,6 +15,8 @@ from app.models.payment import Payment
 from app.models.housekeeping import Housekeeping
 from app.models.maintenance import Maintenance
 from app.models.refund import Refund
+from app.models.discount import Discount
+from app.models.staff_assignment import StaffAssignment
 
 def init_db():
     Base.metadata.create_all(bind=engine)

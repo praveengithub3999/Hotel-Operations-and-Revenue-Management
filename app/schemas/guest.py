@@ -10,6 +10,7 @@ class GuestCreate(BaseModel):
     address: Optional[str] = Field(default=None, max_length=500)
     id_type: Optional[str] = Field(default=None, max_length=50)
     id_reference: Optional[str] = Field(default=None, max_length=100)
+    emergency_contact: Optional[str] = Field(default=None, max_length=50)
 
     @field_validator("first_name", "last_name")
     @classmethod
@@ -38,5 +39,6 @@ class GuestResponse(BaseModel):
     address: Optional[str]
     id_type: Optional[str]
     id_reference: Optional[str]
+    emergency_contact: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

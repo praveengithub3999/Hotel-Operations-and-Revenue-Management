@@ -21,6 +21,8 @@ from app.models.charge import Charge
 from app.models.user import User
 from app.models.housekeeping import Housekeeping
 from app.models.maintenance import Maintenance
+from app.models.discount import Discount
+from app.models.staff_assignment import StaffAssignment
 
 # Create tables that don't exist yet
 Base.metadata.create_all(bind=engine)

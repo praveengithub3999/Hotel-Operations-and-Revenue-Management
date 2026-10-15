@@ -8,6 +8,26 @@ from app.models.service_request import ServiceRequest
 from app.models.charge import Charge
 from app.models.invoice import Invoice
 from app.models.payment import Payment
+from app.models.refund import Refund
 from app.models.housekeeping import Housekeeping
 from app.models.maintenance import Maintenance
-from app.models.user import User
+from app.models.discount import Discount
+from app.models.staff_assignment import StaffAssignment
+
+__all__ = [
+    "User",
+    "Hotel",
+    "RoomType",
+    "Room",
+    "Guest",
+    "Reservation",
+    "ServiceRequest",
+    "Charge",
+    "Invoice",
+    "Payment",
+    "Refund",
+    "Housekeeping",
+    "Maintenance",
+    "Discount",
+    "StaffAssignment",
+]

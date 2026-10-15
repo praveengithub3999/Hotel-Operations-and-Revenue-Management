@@ -26,7 +26,24 @@ class Housekeeping(Base):
         nullable=True
     )
 
+    task_type = Column(
+        String(50),
+        default="CLEANING",
+        nullable=True
+    )
+
+    priority = Column(
+        String(20),
+        default="MEDIUM",
+        nullable=True
+    )
+
     notes = Column(
+        String,
+        nullable=True
+    )
+
+    remarks = Column(
         String,
         nullable=True
     )
@@ -34,6 +51,11 @@ class Housekeeping(Base):
     created_at = Column(
         DateTime,
         default=datetime.utcnow
+    )
+
+    started_at = Column(
+        DateTime,
+        nullable=True
     )
 
     completed_at = Column(

@@ -21,9 +21,31 @@ class Maintenance(Base):
         nullable=False
     )
 
+    reported_by = Column(
+        String(100),
+        nullable=True
+    )
+
+    category = Column(
+        String(50),
+        default="GENERAL",
+        nullable=True
+    )
+
+    priority = Column(
+        String(20),
+        default="MEDIUM",
+        nullable=True
+    )
+
     issue = Column(
         String,
         nullable=False
+    )
+
+    description = Column(
+        String(255),
+        nullable=True
     )
 
     assigned_to = Column(
