@@ -16,7 +16,7 @@ router = APIRouter(
 @router.post(
     "/",
     response_model=PaymentResponse,
-    dependencies=[Depends(require_role("ADMIN", "FINANCE"))]
+    dependencies=[Depends(require_role("ADMIN", "FINANCE", "RECEPTIONIST", "MANAGER"))]
 )
 def create_payment(
     payment_data: PaymentCreate,
@@ -29,7 +29,7 @@ def create_payment(
 @router.get(
     "/{payment_id}",
     response_model=PaymentResponse,
-    dependencies=[Depends(require_role("ADMIN", "FINANCE", "MANAGER"))]
+    dependencies=[Depends(require_role("ADMIN", "FINANCE", "MANAGER", "RECEPTIONIST"))]
 )
 def get_payment(
     payment_id: int,

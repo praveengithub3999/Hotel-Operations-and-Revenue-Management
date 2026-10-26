@@ -17,7 +17,7 @@ router = APIRouter(
 @router.post(
     "/",
     response_model=InvoiceResponse,
-    dependencies=[Depends(require_role("ADMIN", "FINANCE"))]
+    dependencies=[Depends(require_role("ADMIN", "FINANCE", "RECEPTIONIST", "MANAGER"))]
 )
 def create_invoice(
     invoice_data: InvoiceCreate,
@@ -30,7 +30,7 @@ def create_invoice(
 @router.get(
     "/",
     response_model=List[InvoiceResponse],
-    dependencies=[Depends(require_role("ADMIN", "FINANCE", "MANAGER"))]
+    dependencies=[Depends(require_role("ADMIN", "FINANCE", "MANAGER", "RECEPTIONIST"))]
 )
 def get_invoices(db: Session = Depends(get_db)):
     return db.query(Invoice).all()
@@ -39,7 +39,7 @@ def get_invoices(db: Session = Depends(get_db)):
 @router.get(
     "/{invoice_id}",
     response_model=InvoiceResponse,
-    dependencies=[Depends(require_role("ADMIN", "FINANCE", "MANAGER"))]
+    dependencies=[Depends(require_role("ADMIN", "FINANCE", "MANAGER", "RECEPTIONIST"))]
 )
 def get_invoice(
     invoice_id: int,
@@ -54,7 +54,7 @@ def get_invoice(
 @router.post(
     "/{invoice_id}/recalculate",
     response_model=InvoiceResponse,
-    dependencies=[Depends(require_role("ADMIN", "FINANCE"))]
+    dependencies=[Depends(require_role("ADMIN", "FINANCE", "MANAGER", "RECEPTIONIST"))]
 )
 def recalculate_invoice(
     invoice_id: int,

@@ -33,7 +33,7 @@ function Dashboard() {
       "/billing", "/housekeeping", "/maintenance", "/reports",
     ],
     RECEPTIONIST: [
-      "/dashboard", "/rooms", "/guests", "/reservations",
+      "/dashboard", "/rooms", "/guests", "/reservations", "/billing",
     ],
     HOUSEKEEPING: [
       "/dashboard", "/housekeeping",
@@ -45,7 +45,7 @@ function Dashboard() {
       "/dashboard", "/billing", "/reports",
     ],
     MANAGER: [
-      "/dashboard", "/rooms", "/reservations", "/reports",
+      "/dashboard", "/rooms", "/reservations", "/billing", "/reports",
     ],
   };
 
