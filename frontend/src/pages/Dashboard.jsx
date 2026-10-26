@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import "./Dashboard.css";
 
@@ -11,6 +10,7 @@ function Dashboard() {
   const [message, setMessage] = useState("");
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Read the role from the current login token.
   const token = localStorage.getItem("token");
@@ -70,7 +70,6 @@ function Dashboard() {
     const loadDashboardData = async () => {
       setMessage("");
 
-      // Load only information the role is expected to access.
       const requests = [];
 
       if (["ADMIN", "RECEPTIONIST", "MANAGER"].includes(role)) {
@@ -111,7 +110,7 @@ function Dashboard() {
 
       if (failedRequests.length > 0) {
         console.error("Some dashboard requests failed:", failedRequests);
-        setMessage("Some dashboard information could not be loaded.");
+        setMessage("Some dashboard metrics could not be loaded.");
       }
     };
 
@@ -135,11 +134,17 @@ function Dashboard() {
   return (
     <div className="dashboard">
       <aside className="sidebar">
-        <h2>StayEase</h2>
+        <div className="sidebar-brand">
+          <span>🏨</span> StayEase
+        </div>
 
         <nav>
           {navigationLinks.map((item) => (
-            <Link key={item.path} to={item.path}>
+            <Link
+              key={item.path}
+              to={item.path}
+              className={location.pathname === item.path ? "active" : ""}
+            >
               {item.label}
             </Link>
           ))}
@@ -148,92 +153,150 @@ function Dashboard() {
         <button
           type="button"
           onClick={handleLogout}
-          style={{
-            marginTop: "25px",
-            width: "100%",
-            padding: "10px",
-            cursor: "pointer",
-          }}
+          className="sidebar-logout-btn"
         >
-          Logout
+          Sign Out
         </button>
       </aside>
 
       <main className="main-content">
-        <div className="header">
+        <div className="dashboard-header">
           <div>
-            <h1>Hotel Dashboard</h1>
-            <p>Welcome to StayEase Hotel Management</p>
+            <h1>Hotel Operations Dashboard</h1>
+            <p>Welcome to StayEase Hotel Management System</p>
           </div>
 
-          <span>{role.replaceAll("_", " ")}</span>
+          <span className="role-badge">{role.replaceAll("_", " ")}</span>
         </div>
 
-        {message && <p>{message}</p>}
+        {message && <div className="dashboard-banner">{message}</div>}
 
+        {/* Top Summary Metrics */}
         {["ADMIN", "RECEPTIONIST", "MANAGER"].includes(role) && (
-          <div className="cards">
-            <div className="card">
-              <h3>Total Rooms</h3>
-              <p>{rooms.length}</p>
-              <Link to="/rooms">View rooms</Link>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <span className="stat-label">Total Rooms</span>
+              <div className="stat-value">{rooms.length}</div>
+              <Link to="/rooms" className="stat-link">
+                View rooms →
+              </Link>
             </div>
 
-            <div className="card">
-              <h3>Total Reservations</h3>
-              <p>{reservations.length}</p>
-              <Link to="/reservations">View reservations</Link>
+            <div className="stat-card">
+              <span className="stat-label">Total Reservations</span>
+              <div className="stat-value">{reservations.length}</div>
+              <Link to="/reservations" className="stat-link">
+                View reservations →
+              </Link>
             </div>
 
             {["ADMIN", "RECEPTIONIST"].includes(role) && (
-              <div className="card">
-                <h3>Total Guests</h3>
-                <p>{guests.length}</p>
-                <Link to="/guests">View guests</Link>
+              <div className="stat-card">
+                <span className="stat-label">Total Guests</span>
+                <div className="stat-value">{guests.length}</div>
+                <Link to="/guests" className="stat-link">
+                  View guests →
+                </Link>
               </div>
             )}
           </div>
         )}
 
-        {["ADMIN", "FINANCE"].includes(role) && (
-          <div className="cards">
-            <div className="card">
-              <h3>Billing</h3>
-              <p>Invoices and payments</p>
-              <Link to="/billing">Open billing</Link>
-            </div>
-          </div>
-        )}
+        {/* Operational Modules Section */}
+        <h2 className="section-heading">Operational Modules</h2>
 
-        {["ADMIN", "HOUSEKEEPING"].includes(role) && (
-          <div className="cards">
-            <div className="card">
-              <h3>Housekeeping</h3>
-              <p>Room cleaning tasks</p>
-              <Link to="/housekeeping">View tasks</Link>
+        <div className="modules-grid">
+          {["ADMIN", "RECEPTIONIST", "MANAGER"].includes(role) && (
+            <div className="module-card">
+              <div className="module-icon">🏨</div>
+              <h3 className="module-title">Rooms &amp; Inventory</h3>
+              <p className="module-desc">
+                Manage room configurations, floors, availability, and pricing.
+              </p>
+              <Link to="/rooms" className="module-link">
+                Manage Rooms →
+              </Link>
             </div>
-          </div>
-        )}
+          )}
 
-        {["ADMIN", "MAINTENANCE"].includes(role) && (
-          <div className="cards">
-            <div className="card">
-              <h3>Maintenance</h3>
-              <p>Room repair requests</p>
-              <Link to="/maintenance">View maintenance</Link>
+          {["ADMIN", "RECEPTIONIST", "MANAGER"].includes(role) && (
+            <div className="module-card">
+              <div className="module-icon">📅</div>
+              <h3 className="module-title">Reservations</h3>
+              <p className="module-desc">
+                Handle bookings, check-in, check-out, and stay modifications.
+              </p>
+              <Link to="/reservations" className="module-link">
+                Manage Reservations →
+              </Link>
             </div>
-          </div>
-        )}
+          )}
 
-        {["ADMIN", "MANAGER", "FINANCE"].includes(role) && (
-          <div className="cards">
-            <div className="card">
-              <h3>Reports</h3>
-              <p>Hotel performance</p>
-              <Link to="/reports">View reports</Link>
+          {["ADMIN", "RECEPTIONIST"].includes(role) && (
+            <div className="module-card">
+              <div className="module-icon">👤</div>
+              <h3 className="module-title">Guest Registry</h3>
+              <p className="module-desc">
+                Register guest profiles, verify ID proofs, and track stay history.
+              </p>
+              <Link to="/guests" className="module-link">
+                View Guests →
+              </Link>
             </div>
-          </div>
-        )}
+          )}
+
+          {["ADMIN", "FINANCE", "RECEPTIONIST", "MANAGER"].includes(role) && (
+            <div className="module-card">
+              <div className="module-icon">💳</div>
+              <h3 className="module-title">Billing &amp; Invoices</h3>
+              <p className="module-desc">
+                Review folios, generate invoices, apply discounts, and record payments.
+              </p>
+              <Link to="/billing" className="module-link">
+                Open Billing →
+              </Link>
+            </div>
+          )}
+
+          {["ADMIN", "HOUSEKEEPING", "MANAGER"].includes(role) && (
+            <div className="module-card">
+              <div className="module-icon">🧹</div>
+              <h3 className="module-title">Housekeeping</h3>
+              <p className="module-desc">
+                Monitor room hygiene, track cleaning tasks, and inspect rooms.
+              </p>
+              <Link to="/housekeeping" className="module-link">
+                View Tasks →
+              </Link>
+            </div>
+          )}
+
+          {["ADMIN", "MAINTENANCE", "MANAGER"].includes(role) && (
+            <div className="module-card">
+              <div className="module-icon">🔧</div>
+              <h3 className="module-title">Maintenance</h3>
+              <p className="module-desc">
+                Track room repair requests, assign technicians, and monitor SLAs.
+              </p>
+              <Link to="/maintenance" className="module-link">
+                View Maintenance →
+              </Link>
+            </div>
+          )}
+
+          {["ADMIN", "MANAGER", "FINANCE"].includes(role) && (
+            <div className="module-card">
+              <div className="module-icon">📊</div>
+              <h3 className="module-title">Reports &amp; Analytics</h3>
+              <p className="module-desc">
+                Analyze hotel occupancy rates, ADR, RevPAR, and revenue breakdown.
+              </p>
+              <Link to="/reports" className="module-link">
+                View Reports →
+              </Link>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
