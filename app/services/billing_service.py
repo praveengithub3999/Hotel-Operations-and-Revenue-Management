@@ -139,6 +139,12 @@ class BillingService:
         if not (Decimal("0") <= data.tax_percentage <= Decimal("100")):
             raise HTTPException(status_code=400, detail="Tax percentage must be between 0 and 100")
 
+        # Auto-calculate and attach room stay charge if not already recorded
+        try:
+            self.calculate_room_charges(data.reservation_id)
+        except Exception:
+            pass
+
         charges = self.charge_repo.get_by_reservation(data.reservation_id)
         subtotal = sum((charge.total_amount for charge in charges), Decimal("0.00"))
 
@@ -174,6 +180,12 @@ class BillingService:
         existing_payments = self.payment_repo.get_by_invoice(invoice.id)
         if existing_payments:
             raise HTTPException(status_code=400, detail="Cannot recalculate invoice when payment records exist")
+
+        # Auto-calculate and attach room stay charge if not already recorded
+        try:
+            self.calculate_room_charges(invoice.reservation_id)
+        except Exception:
+            pass
 
         charges = self.charge_repo.get_by_reservation(invoice.reservation_id)
         subtotal = sum((charge.total_amount for charge in charges), Decimal("0.00"))

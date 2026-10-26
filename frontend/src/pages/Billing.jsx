@@ -8,6 +8,7 @@ function Billing() {
   const [successMessage, setSuccessMessage] = useState("");
   const [paymentMethods, setPaymentMethods] = useState({});
   const [loadingInvoice, setLoadingInvoice] = useState(null);
+  const [loadingRecalculate, setLoadingRecalculate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -103,6 +104,25 @@ function Billing() {
       setGenerateError(errDetail);
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleRecalculate = async (invoiceId) => {
+    setLoadingRecalculate(invoiceId);
+    setMessage("");
+    setSuccessMessage("");
+
+    try {
+      await api.post(`/invoices/${invoiceId}/recalculate`, {});
+      setSuccessMessage(`Invoice #${invoiceId} recalculated with room stay charges!`);
+      await loadInvoices();
+    } catch (err) {
+      console.error(err);
+      setMessage(
+        err.response?.data?.detail || "Failed to recalculate invoice charges."
+      );
+    } finally {
+      setLoadingRecalculate(null);
     }
   };
 
@@ -594,6 +614,28 @@ function Billing() {
                         <span style={{ color: "#065f46", fontWeight: 600 }}>
                           Settled
                         </span>
+                      ) : Number(invoice.total) <= 0 ? (
+                        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                          <span style={{ color: "#b91c1c", fontSize: "12px", fontWeight: 500 }}>
+                            ₹0.00
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRecalculate(invoice.id)}
+                            disabled={loadingRecalculate === invoice.id}
+                            style={{
+                              ...buttonStyle,
+                              background: "#d97706",
+                              padding: "6px 12px",
+                              fontSize: "12px",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {loadingRecalculate === invoice.id
+                              ? "Calculating..."
+                              : "+ Add Room Charges"}
+                          </button>
+                        </div>
                       ) : (
                         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                           <select
