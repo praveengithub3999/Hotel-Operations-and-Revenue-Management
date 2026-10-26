@@ -39,6 +39,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.on_event("startup")
+def startup_migration():
+    """Ensure database schema is automatically synchronized on any deployment (Neon, Render, Local)."""
+    from app.database.database import engine, Base
+    from sqlalchemy import text
+    try:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE guests ADD COLUMN IF NOT EXISTS emergency_contact VARCHAR(50);"))
+            conn.execute(text("ALTER TABLE housekeeping ADD COLUMN IF NOT EXISTS task_type VARCHAR(50) DEFAULT 'CLEANING';"))
+            conn.execute(text("ALTER TABLE housekeeping ADD COLUMN IF NOT EXISTS priority VARCHAR(20) DEFAULT 'MEDIUM';"))
+            conn.execute(text("ALTER TABLE housekeeping ADD COLUMN IF NOT EXISTS started_at TIMESTAMP;"))
+            conn.execute(text("ALTER TABLE housekeeping ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);"))
+            conn.execute(text("ALTER TABLE maintenance ADD COLUMN IF NOT EXISTS reported_by VARCHAR(100);"))
+            conn.execute(text("ALTER TABLE maintenance ADD COLUMN IF NOT EXISTS category VARCHAR(50) DEFAULT 'GENERAL';"))
+            conn.execute(text("ALTER TABLE maintenance ADD COLUMN IF NOT EXISTS priority VARCHAR(20) DEFAULT 'MEDIUM';"))
+            conn.execute(text("ALTER TABLE maintenance ADD COLUMN IF NOT EXISTS description VARCHAR(255);"))
+        Base.metadata.create_all(bind=engine)
+    except Exception as exc:
+        print(f"Startup auto-migration notice: {exc}")
+
+
 app.include_router(hotel_router)
 app.include_router(room_type_router)
 app.include_router(room_router)

@@ -72,14 +72,19 @@ def migrate_database(db_url: str, label: str):
     print(f"Migration completed for {label}!\n")
 
 if __name__ == "__main__":
-    # Migrate test database
-    load_dotenv(".env.test", override=True)
-    test_url = os.getenv("TEST_DATABASE_URL")
-    if test_url:
-        migrate_database(test_url, "TEST")
+    if len(sys.argv) > 1:
+        custom_url = sys.argv[1].strip()
+        print(f"Running migration on provided database URL: {custom_url[:25]}...")
+        migrate_database(custom_url, "REMOTE / NEON")
+    else:
+        # Migrate test database
+        load_dotenv(".env.test", override=True)
+        test_url = os.getenv("TEST_DATABASE_URL")
+        if test_url:
+            migrate_database(test_url, "TEST")
 
-    # Migrate dev database
-    load_dotenv(".env", override=True)
-    dev_url = os.getenv("DATABASE_URL")
-    if dev_url:
-        migrate_database(dev_url, "DEVELOPMENT")
+        # Migrate dev database
+        load_dotenv(".env", override=True)
+        dev_url = os.getenv("DATABASE_URL")
+        if dev_url:
+            migrate_database(dev_url, "DEVELOPMENT")

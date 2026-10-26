@@ -39,7 +39,22 @@ class GuestService:
             id_reference=data.id_reference,
             emergency_contact=data.emergency_contact
         )
-        return self.guest_repo.create(guest)
+        try:
+            return self.guest_repo.create(guest)
+        except Exception as exc:
+            self.db.rollback()
+            if "emergency_contact" in str(exc).lower():
+                try:
+                    from sqlalchemy import text
+                    self.db.execute(text("ALTER TABLE guests ADD COLUMN IF NOT EXISTS emergency_contact VARCHAR(50);"))
+                    self.db.commit()
+                    return self.guest_repo.create(guest)
+                except Exception:
+                    self.db.rollback()
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unable to register guest: {str(exc)}"
+            )
 
     def get_guests(self) -> List[Guest]:
         return self.guest_repo.get_all()

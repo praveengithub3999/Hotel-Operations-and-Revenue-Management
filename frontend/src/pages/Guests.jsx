@@ -114,9 +114,21 @@ function Guests() {
       await loadGuests();
     } catch (err) {
       console.error(err);
-      setFormError(
-        err.response?.data?.detail || "Failed to register guest. Please check details."
-      );
+      let errorMsg = "Failed to register guest. Please check details.";
+      if (typeof err.response?.data?.detail === "string") {
+        errorMsg = err.response.data.detail;
+      } else if (Array.isArray(err.response?.data?.detail)) {
+        errorMsg = err.response.data.detail
+          .map((d) => `${d.loc ? d.loc.slice(-1)[0] + ': ' : ''}${d.msg}`)
+          .join("; ");
+      } else if (typeof err.response?.data === "string") {
+        errorMsg = err.response.data;
+      } else if (err.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      setFormError(errorMsg);
     } finally {
       setSubmitting(false);
     }
